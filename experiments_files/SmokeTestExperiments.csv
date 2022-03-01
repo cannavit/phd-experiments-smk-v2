@@ -1,0 +1,12 @@
+chaos_test,criterion,test,name,body
+Network BlackHole,cluster-coverage ,check-memory,experiment test,"{""namespace"": ""test""}"
+Network DNS,cluster-coverage ,check-memory,experiment test,"{""namespace"": ""test""}"
+Network Latence,cluster-coverage ,check-memory,experiment test,"{""namespace"": ""test""}"
+Network PacketLoss,cluster-coverage ,check-memory,experiment test,"{""namespace"": ""test""}"
+State Shutdown ,cluster-coverage ,check-memory,experiment test,"{""namespace"": ""test""}"
+State Process Killer,cluster-coverage ,check-memory,experiment test,"{""namespace"": ""test""}"
+Resources CPU,cluster-coverage ,check-memory,experiment test,"{""namespace"": ""test""}"
+Resources Disk,cluster-coverage ,check-memory,experiment test,"{""namespace"": ""test""}"
+Resources IO,cluster-coverage ,check-memory,experiment test,"{""namespace"": ""test""}"
+Resources Memory,cluster-coverage ,check-memory,experiment test,"{""namespace"": ""test""}"
+,,,,;
