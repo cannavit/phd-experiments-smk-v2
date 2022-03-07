@@ -1,4 +1,15 @@
 # Project Name
+
+## Run MongoDB using Docker
+
+### For arm64 use this command:
+
+    docker-compose -f docker-compose-arm64.yaml up -d
+
+### For others architectures use the command:
+
+    docker-compose -f docker-compose.yaml up -d
+
 ### Django Template for backend Project backend
 django-admin startproject <project-name>
 ### Create the requirenment files
