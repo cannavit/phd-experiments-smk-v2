@@ -18,9 +18,8 @@ django-admin startproject <project-name>
 ### Create python environment
 
     # Create new python env
-    virtualenv venv
+    virtualenv venv --python=python3.9
     
-
     # Active the environment
     source venv/bin/activate
 
@@ -28,6 +27,8 @@ django-admin startproject <project-name>
 
     # Install dependencies
     pip install -r requirements.txt
+
+    # Active bash . ~/.bashrc
 
     
 ### Helpers 

@@ -36,6 +36,7 @@ environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 CHAOS_TEAM_ID=env('CHAOS_TEAM_ID')
 CHAOS_EMAIL=env('CHAOS_EMAIL')
 CHAOS_PASSWORD=env('CHAOS_PASSWORD')
+KUBE_SMOKE_TEST_HOST=env('KUBE_SMOKE_TEST_HOST')
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
