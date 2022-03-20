@@ -1,0 +1,9 @@
+chaos_test,criterion,test,name,namespace
+shutdown,cluster-coverage,check_memory,experiment edutelling,edutelling-develop
+shutdown,cluster-coverage,check_disk,experiment edutelling,edutelling-develop
+shutdown,cluster-coverage,check_nodes,experiment edutelling,edutelling-develop
+shutdown,ingress-coverage,check_ingress,experiment edutelling,edutelling-develop
+shutdown,resource-up,volumes_free_space,experiment edutelling,edutelling-develop
+shutdown,resource-up,volumes_exist_files,experiment edutelling,edutelling-develop
+shutdown,service-coverage,check_pods_running,experiment edutelling,edutelling-develop
+,,,,;

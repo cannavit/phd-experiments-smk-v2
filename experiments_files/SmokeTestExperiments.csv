@@ -1,3 +1,6 @@
 chaos_test,criterion,test,name,namespace
-shutdown,cluster-coverage ,check-memory,experiment test,smoke-test
+shutdown,cluster-coverage ,check_memory,experiment test,smoke-test
+shutdown,cluster-coverage ,check_disk,experiment test,smoke-test
+shutdown,cluster-coverage ,check_nodes,experiment test,smoke-test
+shutdown,service-coverage ,check_pods_running,experiment test,smoke-test
 ,,,,;

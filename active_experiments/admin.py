@@ -15,6 +15,45 @@ from django.contrib import messages
 from .utils.chaos_network import Network_Blackhole
 
 
+SERVICE_NAME = [
+    'teastore-webui',
+    'teastore-registry'
+]
+
+
+def getk8sObjects(tokenBearer, CHAOS_TEST_BODY_TEMP, namespace):
+
+    url = "https://api.gremlin.com/v1/kubernetes/targets?teamId=" + settings.CHAOS_TEAM_ID
+
+    payload = {}
+
+    headers = {
+        'Authorization': tokenBearer,
+        'accept': 'application/json'
+    }
+
+    response = requests.request("GET", url, headers=headers, data=payload)
+
+    print(response.text)
+    response = json.loads(response.text)
+    objects = response[0]['objects']
+
+    objList = []
+
+    for obj in objects:
+        #TODO Change namespace
+        # if obj['name'] in SERVICE_NAME and obj['namespace'] == namespace:
+        if obj['name'] in SERVICE_NAME and obj['namespace'] == 'smoke-test':
+        
+            objList.append(obj)
+
+    print(objList)
+
+    CHAOS_TEST_BODY_TEMP['targetDefinition']['strategy']['k8sObjects'] = objList
+
+    return CHAOS_TEST_BODY_TEMP
+
+
 CHAOS_TEST_BODY = {
     "targetDefinition":
         {"strategy":
@@ -22,7 +61,7 @@ CHAOS_TEST_BODY = {
              "k8sObjects": [
                 {
                     "clusterId": "changeit",
-                    "uid": "b82c1f26-f2a3-4c0a-855e-a5daed03bf81",
+                    "uid": "a4b7c565-f978-4b59-9887-4f41f5c53883",
                     "namespace": "smoke-test",
                     "name": "teastore-webui",
                     "kind": "DEPLOYMENT",
@@ -116,13 +155,21 @@ def run_experiment(modeladmin, request, queryset):
         messages.success(request, "Token: " + tokenBearer['header'])
 
     print(tokenBearer)
+    
+    CHAOS_TEST_BODY_TEMP = CHAOS_TEST_BODY
+    
+
 
     # Get the Data Selected when was active the action
     for obj in queryset:
         print(obj.chaos_test)
 
-        CHAOS_TEST_BODY_TEMP = CHAOS_TEST_BODY
+        repitAttack = True
+        counterIteration = 0
 
+        obj.namespace = 'smoke-test' #TODO Change namespace Delete this.
+
+        CHAOS_TEST_BODY_TEMP = getk8sObjects(tokenBearer['header'], CHAOS_TEST_BODY_TEMP, obj.namespace)
         CHAOS_TEST_BODY_TEMP['impactDefinition']['cliArgs'][0] = obj.chaos_test
 
         # TODO here is possible add the numbers of the pods
@@ -141,42 +188,58 @@ def run_experiment(modeladmin, request, queryset):
         else:
             messages.error(
                 request, "Attack Error: " + obj.chaos_test + " ERROR: " + attackResponse.reason)
+            repitAttack = False
             break
 
-        for i in range(0, 2000, 1):
+        while repitAttack:
+            counterIteration += 1
+            print("Iteration: " + str(counterIteration))
 
-            statusRespone = attack_status(
-                tokenBearer['header'], attackResponse.text)
-
-            print('STATUS ATTACK: ' + str(i) + ' ' + statusRespone)
-
-            if statusRespone == 'Successful':
-                messages.success(
-                    request, "Attack: " + obj.chaos_test + " is finished, code: " + attackResponse.text)
-                break
-
-            elif statusRespone == 'Pending':
-                # TODO Run here the smoke test librery
-
-                if obj.test == 'check_memory':
-
-                    response = kubeSmokeTest.check_memory(obj.namespace)
-                    save_experiment_data(response,obj.criterial,obj.test, obj)
-                    
-                elif obj.test == 'check_disk':
-
-                    response = kubeSmokeTest.check_memory(obj.namespace)
-                    save_experiment_data(response,obj.criterial,obj.test, obj)
-
-                    print(response)
-
-                messages.warning(
-                    request, "Attack: " + obj.chaos_test + " is pending, code: " + attackResponse.text)
-
-            else:
+            if counterIteration > 60:
                 messages.error(
-                    request, "Attack Error: " + obj.chaos_test + " ERROR: " + attackResponse.reason)
+                    request, "GERMILN NOT CONNECT WITH CLUSTER K8s: " + obj.chaos_test + " ERROR: " + attackResponse.reason)
                 break
+
+            for i in range(0, 2000, 1):
+
+                statusRespone = attack_status(
+                    tokenBearer['header'], attackResponse.text)
+
+                print('STATUS ATTACK: ' + str(i) + ' ' + statusRespone)
+
+                if statusRespone == 'Successful':
+                    messages.success(
+                        request, "Attack: " + obj.chaos_test + " is finished, code: " + attackResponse.text)
+                    break
+
+                elif statusRespone == 'Pending':
+                 # TODO Run here the smoke test librery
+
+                    list_of_test = [
+                        'check_memory',
+                        'check_disk',
+                        'check_nodes'
+                    ]
+
+                # Search one string inside of list_of_test
+                    test_is_define = False
+
+                    if obj.test in list_of_test:
+
+                        response = kubeSmokeTest.check_memory(obj.namespace)
+                        save_experiment_data(
+                            response, obj.criterial, obj.test, obj)
+
+                        messages.warning(
+                            request, "Attack: " + obj.chaos_test + " is pending, code: " + attackResponse.text)
+
+                    repitAttack = True
+
+                else:
+                    messages.error(
+                        request, "Attack Error: " + obj.chaos_test + " ERROR: " + attackResponse.reason)
+                    break
+                repitAttack = False
 
             time.sleep(2)
 
@@ -185,13 +248,13 @@ def run_experiment(modeladmin, request, queryset):
 # Show all field in admin page
 class ActiveExperimentsAdmin(admin.ModelAdmin):
 
-    list_display = ( 'id','chaos_test', 'criterial',
+    list_display = ('id', 'chaos_test', 'criterial',
                     'test', 'experiment', 'is_active')
-    list_filter = ( 'chaos_test', 'criterial',
+    list_filter = ('chaos_test', 'criterial',
                    'test', 'experiment', 'is_active')
-    search_fields = ( 'chaos_test', 'criterial',
+    search_fields = ('chaos_test', 'criterial',
                      'test', 'experiment', 'is_active')
-    ordering = ( 'chaos_test', 'criterial',
+    ordering = ('chaos_test', 'criterial',
                 'test', 'experiment', 'is_active')
     filter_horizontal = ()
     list_per_page = 25
@@ -208,11 +271,11 @@ class TestResultsAdmin(admin.ModelAdmin):
 
     list_display = ('id', 'testId', 'fullName', 'testSuccess',
                     'numberOfRepetions', 'criterial', 'test', 'failureMessages', 'duration')
-    list_filter = ( 'testId', 'fullName', 'testSuccess',
+    list_filter = ('testId', 'fullName', 'testSuccess',
                    'numberOfRepetions', 'criterial', 'test', 'failureMessages', 'duration')
-    search_fields = ( 'testId', 'fullName', 'testSuccess',
+    search_fields = ('testId', 'fullName', 'testSuccess',
                      'numberOfRepetions', 'criterial', 'test', 'failureMessages', 'duration')
-    ordering = ( 'testId', 'fullName', 'testSuccess',
+    ordering = ('testId', 'fullName', 'testSuccess',
                 'numberOfRepetions', 'criterial', 'test', 'failureMessages', 'duration')
     filter_horizontal = ()
     list_per_page = 25
@@ -221,8 +284,7 @@ class TestResultsAdmin(admin.ModelAdmin):
 admin.site.register(TestResults, TestResultsAdmin)
 
 
-
-def save_experiment_data(response,test_criterial,test_name, obj):
+def save_experiment_data(response, test_criterial, test_name, obj):
 
     for test in response['testResults']:
         testResultModel = TestResults.objects.filter(
@@ -243,3 +305,6 @@ def save_experiment_data(response,test_criterial,test_name, obj):
             )
         else:
             print(test)
+
+
+# "k8sObjects":[{"clusterId":"changeit","createdAt":"2022-03-14T12:14:01Z","uid":"a4b7c565-f978-4b59-9887-4f41f5c53883","namespace":"smoke-test","name":"teastore-recommender","kind":"DEPLOYMENT","labels":{},"annotations":{},"availableContainers":[],"targetType":"Kubernetes"},{"clusterId":"changeit","createdAt":"2022-03-14T12:14:00Z","uid":"b82c1f26-f2a3-4c0a-855e-a5daed03bf81","namespace":"smoke-test","name":"teastore-registry","kind":"DEPLOYMENT","labels":{},"annotations":{},"availableContainers":[],"targetType":"Kubernetes"},{"clusterId":"changeit","createdAt":"2022-03-14T12:14:01Z","uid":"cc16dd6f-1d5f-4d54-a6d0-267a94a8be20","namespace":"smoke-test","name":"teastore-webui","kind":"DEPLOYMENT","labels":{},"annotations":{},"availableContainers":[],"targetType":"Kubernetes"}],"percentage":100,"containerSelection":{"selectionType":"ANY","containerNames":[]}}},"impactDefinition":{"cliArgs":["shutdown","-d","1","-r"]}}'
